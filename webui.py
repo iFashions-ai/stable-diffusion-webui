@@ -52,6 +52,7 @@ def webui():
     initialize.initialize()
 
     from modules import shared, ui_tempdir, script_callbacks, ui, progress, ui_extra_networks
+    from modules import ui_light
 
     while 1:
         if shared.opts.clean_temp_dir_at_start:
@@ -61,7 +62,7 @@ def webui():
         script_callbacks.before_ui_callback()
         startup_timer.record("scripts before_ui_callback")
 
-        shared.demo = ui.create_ui()
+        shared.demo = ui_light.create_ui()
         startup_timer.record("create ui")
 
         if not cmd_opts.no_gradio_queue:
