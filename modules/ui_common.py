@@ -224,6 +224,108 @@ Requested path was: {f}
             return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
 
 
+def create_output_panel_light(tabname, outdir):
+
+    def open_folder(f):
+        if not os.path.exists(f):
+            print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
+            return
+        elif not os.path.isdir(f):
+            print(f"""
+WARNING
+An open_folder request was made with an argument that is not a folder.
+This could be an error or a malicious attempt to run code on your computer.
+Requested path was: {f}
+""", file=sys.stderr)
+            return
+
+        if not shared.cmd_opts.hide_ui_dir_config:
+            path = os.path.normpath(f)
+            if platform.system() == "Windows":
+                os.startfile(path)
+            elif platform.system() == "Darwin":
+                sp.Popen(["open", path])
+            elif "microsoft-standard-WSL2" in platform.uname().release:
+                sp.Popen(["wsl-open", path])
+            else:
+                sp.Popen(["xdg-open", path])
+
+    with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
+        with gr.Group(elem_id=f"{tabname}_gallery_container"):
+            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
+
+        generation_info = None
+        with gr.Column():
+            with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
+                open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")
+
+                if tabname != "extras":
+                    save = ToolButton('💾', elem_id=f'save_{tabname}', tooltip=f"Save the image to a dedicated directory ({shared.opts.outdir_save}).")
+                    save_zip = ToolButton('🗃️', elem_id=f'save_zip_{tabname}', tooltip=f"Save zip archive with images to a dedicated directory ({shared.opts.outdir_save})")
+
+            open_folder_button.click(
+                fn=lambda: open_folder(shared.opts.outdir_samples or outdir),
+                inputs=[],
+                outputs=[],
+            )
+
+            if tabname != "extras":
+                download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
+
+                with gr.Group():
+                    html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
+                    html_log = gr.HTML(elem_id=f'html_log_{tabname}', elem_classes="html-log")
+
+                    generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
+                    if tabname == 'txt2img' or tabname == 'img2img':
+                        generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
+                        generation_info_button.click(
+                            fn=update_generation_info,
+                            _js="function(x, y, z){ return [x, y, selected_gallery_index()] }",
+                            inputs=[generation_info, html_info, html_info],
+                            outputs=[html_info, html_info],
+                            show_progress=False,
+                        )
+
+                    save.click(
+                        fn=call_queue.wrap_gradio_call(save_files),
+                        _js="(x, y, z, w) => [x, y, false, selected_gallery_index()]",
+                        inputs=[
+                            generation_info,
+                            result_gallery,
+                            html_info,
+                            html_info,
+                        ],
+                        outputs=[
+                            download_files,
+                            html_log,
+                        ],
+                        show_progress=False,
+                    )
+
+                    save_zip.click(
+                        fn=call_queue.wrap_gradio_call(save_files),
+                        _js="(x, y, z, w) => [x, y, true, selected_gallery_index()]",
+                        inputs=[
+                            generation_info,
+                            result_gallery,
+                            html_info,
+                            html_info,
+                        ],
+                        outputs=[
+                            download_files,
+                            html_log,
+                        ]
+                    )
+
+            else:
+                html_info_x = gr.HTML(elem_id=f'html_info_x_{tabname}')
+                html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
+                html_log = gr.HTML(elem_id=f'html_log_{tabname}')
+
+            return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
+
+
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
     refresh_components = refresh_component if isinstance(refresh_component, list) else [refresh_component]
 
