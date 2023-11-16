@@ -355,43 +355,26 @@ def create_ui():
                         default_prompt = ""
                         if isinstance(default_prompt, str) and default_prompt != "":
                             txt2img_interface.load(lambda: default_prompt, outputs=prompt)
-
+                    
+                    id_part = "txt2img"
+                    # with gr.Column(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
                     with gr.Column(scale=3, min_width=0):
-                        generate_button = gr.Button(
-                            label="Generate",
-                            value="Generate",
-                            elem_classes="type_row",
-                            elem_id="txt2img_generate",
-                            visible=True,
-                            variant='primary'
-                        )
-                        skip_button = gr.Button(
-                            label="Skip",
-                            value="Skip",
-                            elem_id="txt2img_skip",
-                            elem_classes="type_row_half",
-                            visible=False,
-                        )
-                        stop_button = gr.Button(
-                            label="Stop",
-                            value="Stop",
-                            elem_classes="type_row_half",
-                            elem_id="txt2img_interrupt",
-                            visible=False,
+                        interrupt = gr.Button('Stop', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
+                        skip = gr.Button('Skip', elem_id=f"{id_part}_skip", elem_classes="generate-box-skip")
+                        generate_button = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+
+                        skip.click(
+                            fn=lambda: shared.state.skip(),
+                            inputs=[],
+                            outputs=[],
                         )
 
-                        def stop_clicked():
-                            shared.state.interrupt()
-                            return [gr.update(interactive=False)] * 2
-
-                        stop_button.click(
-                            stop_clicked,
-                            outputs=[skip_button, stop_button],
-                            queue=False,
-                            _js="cancelGenerateForever",
+                        interrupt.click(
+                            fn=lambda: shared.state.interrupt(),
+                            inputs=[],
+                            outputs=[],
                         )
-                        skip_button.click(fn=lambda: shared.state.skip(), queue=False)
-                
+
                 (
                     txt2img_gallery,
                     generation_info,
@@ -1338,7 +1321,7 @@ def create_ui():
     for _interface, label, _ifid in interfaces:
         shared.tab_names.append(label)
 
-    with gr.Blocks(theme=shared.gradio_theme, analytics_enabled=False, title="Stable Diffusion") as demo:
+    with gr.Blocks(theme=shared.gradio_theme, analytics_enabled=False, title="iFashion AIGC Platform") as demo:
         settings.add_quicksettings()
 
         parameters_copypaste.connect_paste_params_buttons()

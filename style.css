@@ -322,7 +322,7 @@ div.block.gradio-accordion {
 .gradio-button.generate-box-skip, .gradio-button.generate-box-interrupt{
     position: absolute;
     width: 50%;
-    height: 100%;
+    height: 75%;
     display: none;
     background: #b4c0cc;
 }
