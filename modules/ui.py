@@ -375,12 +375,8 @@ def create_ui():
                             outputs=[],
                         )
 
-                (
-                    txt2img_gallery,
-                    generation_info,
-                    html_info,
-                    html_log,
-                ) = ui_common.create_output_panel_light("txt2img", opts.outdir_txt2img_samples)
+                # Output
+                txt2img_gallery, generation_info, html_info, html_log = ui_common.create_output_panel_light("txt2img", opts.outdir_txt2img_samples)
 
                 default_advanced_checkbox = False
                 with gr.Row(elem_classes="advanced_check_row"):
