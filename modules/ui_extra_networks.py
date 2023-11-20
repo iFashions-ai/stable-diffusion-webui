@@ -354,7 +354,7 @@ def pages_in_preferred_order(pages):
     return sorted(pages, key=lambda x: tab_scores[x.name])
 
 
-def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
+def create_ui(interface: gr.Blocks, unrelated_tabs, tabname, related_tabs=None):
     from modules.ui import switch_values_symbol
 
     ui = ExtraNetworksUi()
@@ -364,7 +364,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
-    related_tabs = []
+    related_tabs = related_tabs or []
 
     for page in ui.stored_extra_pages:
         with gr.Tab(page.title, id=page.id_page) as tab:
