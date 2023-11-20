@@ -355,7 +355,7 @@ def create_ui():
                         default_prompt = ""
                         if isinstance(default_prompt, str) and default_prompt != "":
                             txt2img_interface.load(lambda: default_prompt, outputs=prompt)
-                    
+
                     id_part = "txt2img"
                     # with gr.Column(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
                     with gr.Column(scale=3, min_width=0):
@@ -389,7 +389,7 @@ def create_ui():
 
             with gr.Column(scale=1, visible=default_advanced_checkbox) as advanced_column:
                 scripts.scripts_txt2img.prepare_ui()
-    
+
                 default_prompt_negative = ""
                 with gr.Tab("Configuration", id="txt2img_generation", render=False) as txt2img_generation_tab:
                     # with gr.Accordion(f"Settings", open = False, elem_id="txt2img_generation"):
@@ -404,7 +404,7 @@ def create_ui():
                             elem_id="txt2img_neg_prompt",
                             value=default_prompt_negative,
                         )
-                        
+
                         for category in ordered_ui_categories():
                             if category == "sampler":
                                 steps, sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "txt2img")
@@ -500,11 +500,11 @@ def create_ui():
                             outputs=[],
                             show_progress=False,
                         )
-                        
-                with gr.Tab("iFashion 2.0") as txt2img_controlnet_tab:
+
+                with gr.Tab("iFashion 2.0"):
                     with FormGroup(elem_id="txt2img_script_container"):
                         custom_inputs = scripts.scripts_txt2img.setup_ui()
-                        
+
                 txt2img_generation_tab.render()
 
             advanced_checkbox.change(
@@ -513,11 +513,11 @@ def create_ui():
                 advanced_column,
                 queue=False,
             ).then(fn=lambda: None, _js="refresh_grid_delayed", queue=False)
-            
+
             # Dummy bottons
             paste = ToolButton(value=paste_symbol, elem_id="paste", visible=False)
             dropdown = gr.Dropdown(visible=False, label="Styles", show_label=False, elem_id="txt2img_styles", choices=list(shared.prompt_styles.styles), value=[], multiselect=True, tooltip="Styles")
-            
+
             txt2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.txt2img.txt2img, extra_outputs=[None, '', '']),
                 _js="submit",
@@ -560,7 +560,7 @@ def create_ui():
             generate_button.click(**txt2img_args)
 
             res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('txt2img')}", inputs=None, outputs=None, show_progress=False)
-            
+
             txt2img_paste_fields = [
                 (prompt, "Prompt"),
                 (negative_prompt, "Negative prompt"),
