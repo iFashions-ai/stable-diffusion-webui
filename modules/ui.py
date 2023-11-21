@@ -345,7 +345,6 @@ def create_ui():
                             show_label=False,
                             placeholder="Type prompt here.",
                             elem_id="txt2img_prompt",
-                            container=False,
                             autofocus=True,
                             elem_classes=["type_row", "prompt"],
                             lines=4,
@@ -391,7 +390,7 @@ def create_ui():
 
                 with gr.Tabs(elem_id="txt2img_extra_tabs"):
                     default_prompt_negative = ""
-                    with gr.Tab("Configuration", id="txt2img_generation", render=False) as txt2img_generation_tab:
+                    with gr.Tab("Configuration", id="txt2img_generation", render=True) as txt2img_generation_tab:
                         # with gr.Accordion(f"Settings", open = False, elem_id="txt2img_generation"):
                         with gr.Column(variant='compact', elem_id="txt2img_settings"):
 
@@ -501,11 +500,11 @@ def create_ui():
                                 show_progress=False,
                             )
 
-                    with gr.Tab("iFashion 2.0") as txt2img_controlnet_tab:
+                    with gr.Tab("Controlnet") as txt2img_controlnet_tab:
                         with FormGroup(elem_id="txt2img_script_container"):
                             custom_inputs = scripts.scripts_txt2img.setup_ui()
 
-                    txt2img_generation_tab.render()
+                    # txt2img_generation_tab.render()
 
                     with gr.Tab("Extra Models") as txt2img_extra_model_tab:
                         extra_networks_ui = ui_extra_networks.create_ui(txt2img_interface, [txt2img_generation_tab, txt2img_controlnet_tab], 'txt2img', related_tabs=[txt2img_extra_model_tab])
