@@ -388,6 +388,7 @@ def create_ui():
             with gr.Column(scale=1, visible=default_advanced_checkbox) as advanced_column:
                 scripts.scripts_txt2img.prepare_ui()
 
+                style_name = "Style Selector for SDXL 1.0"
                 with gr.Tabs(elem_id="txt2img_extra_tabs"):
                     default_prompt_negative = ""
                     with gr.Tab("Configuration", id="txt2img_generation", render=True) as txt2img_generation_tab:
@@ -502,12 +503,17 @@ def create_ui():
 
                     with gr.Tab("Controlnet") as txt2img_controlnet_tab:
                         with FormGroup(elem_id="txt2img_script_container"):
-                            custom_inputs = scripts.scripts_txt2img.setup_ui()
+                            custom_inputs = scripts.scripts_txt2img.setup_ui(ignored_scripts={style_name})
+
+                    style_script = scripts.scripts_txt2img.title_map.get(style_name.lower())
+                    if style_script is not None:
+                        with gr.Tab("Style") as txt2img_style_tab:
+                            scripts.scripts_txt2img.create_script_ui(style_script)
 
                     # txt2img_generation_tab.render()
 
                     with gr.Tab("Extra Models") as txt2img_extra_model_tab:
-                        extra_networks_ui = ui_extra_networks.create_ui(txt2img_interface, [txt2img_generation_tab, txt2img_controlnet_tab], 'txt2img', related_tabs=[txt2img_extra_model_tab])
+                        extra_networks_ui = ui_extra_networks.create_ui(txt2img_interface, [txt2img_generation_tab, txt2img_controlnet_tab, txt2img_style_tab], 'txt2img', related_tabs=[txt2img_extra_model_tab])
                         ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
 
             advanced_checkbox.change(

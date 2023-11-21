@@ -537,12 +537,15 @@ class ScriptRunner:
     def prepare_ui(self):
         self.inputs = [None]
 
-    def setup_ui(self):
+    def setup_ui(self, ignored_scripts=None):
         all_titles = [wrap_call(script.title, script.filename, "title") or script.filename for script in self.scripts]
         self.title_map = {title.lower(): script for title, script in zip(all_titles, self.scripts)}
         self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
 
-        self.setup_ui_for_section(None)
+        scriptlist = self.alwayson_scripts
+        if ignored_scripts:
+            scriptlist = [s for s in scriptlist if wrap_call(s.title, s.filename, "title") not in ignored_scripts]
+        self.setup_ui_for_section(None, scriptlist)
 
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
         self.inputs[0] = dropdown
