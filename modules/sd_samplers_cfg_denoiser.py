@@ -185,10 +185,10 @@ class CFGDenoiser(torch.nn.Module):
                 else:
                     c_crossattn = torch.cat([tensor[a:b]], uncond)
 
-                x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict(c_crossattn, image_cond_in[a:b]))
+                x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict(c_crossattn, image_cond_in[a:b]))[:b-a]
 
             if not skip_uncond:
-                x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict(uncond, image_cond_in[-uncond.shape[0]:]))
+                x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict(uncond, image_cond_in[-uncond.shape[0]:]))[:uncond.shape[0]]
 
         denoised_image_indexes = [x[0][0] for x in conds_list]
         if skip_uncond:

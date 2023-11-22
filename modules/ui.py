@@ -177,6 +177,36 @@ def update_negative_prompt_token_counter(text, steps):
     return update_token_counter(text, steps, is_positive=False)
 
 
+class PromptColumn:
+    def __init__(self, is_img2img: bool):
+        id_part = "img2img" if is_img2img else "txt2img"
+        self.id_part = id_part
+
+        with gr.Column(elem_id=f"{id_part}_prompt_container"):
+            # Input Row
+            with gr.Row():
+                with gr.Column(scale=17):
+                    self.prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=4, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+
+                with gr.Column(scale=3, elem_id=f"{id_part}_actions_column"):
+                    with gr.Row():
+                        self.interrupt = gr.Button('Stop', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
+                        self.skip = gr.Button('Skip', elem_id=f"{id_part}_skip", elem_classes="generate-box-skip")
+                        self.submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+
+                        self.skip.click(
+                            fn=lambda: shared.state.skip(),
+                            inputs=[],
+                            outputs=[],
+                        )
+
+                        self.interrupt.click(
+                            fn=lambda: shared.state.interrupt(),
+                            inputs=[],
+                            outputs=[],
+                        )
+
+
 class Toprow:
     """Creates a top row UI with prompts, generate button, styles, extra little buttons for things, and enables some functionality related to their operation"""
 
@@ -339,51 +369,22 @@ def create_ui():
         dummy_component = gr.Label(visible=False)
         with gr.Row():
             with gr.Column(scale=2, label="Input & Output"):
-                with gr.Row(elem_classes="type_row"):
-                    with gr.Column(scale=17):
-                        prompt = gr.Textbox(
-                            show_label=False,
-                            placeholder="Type prompt here.",
-                            elem_id="txt2img_prompt",
-                            autofocus=True,
-                            elem_classes=["type_row", "prompt"],
-                            lines=4,
-                        )
-
-                        default_prompt = ""
-                        if isinstance(default_prompt, str) and default_prompt != "":
-                            txt2img_interface.load(lambda: default_prompt, outputs=prompt)
-
-                    id_part = "txt2img"
-                    # with gr.Column(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
-                    with gr.Column(scale=3, min_width=0):
-                        interrupt = gr.Button('Stop', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
-                        skip = gr.Button('Skip', elem_id=f"{id_part}_skip", elem_classes="generate-box-skip")
-                        generate_button = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
-
-                        skip.click(
-                            fn=lambda: shared.state.skip(),
-                            inputs=[],
-                            outputs=[],
-                        )
-
-                        interrupt.click(
-                            fn=lambda: shared.state.interrupt(),
-                            inputs=[],
-                            outputs=[],
-                        )
+                prompt_row = PromptColumn(is_img2img=False)
 
                 # Output
                 txt2img_gallery, generation_info, html_info, html_log = ui_common.create_output_panel_light("txt2img", opts.outdir_txt2img_samples)
 
-                default_advanced_checkbox = False
-                with gr.Row(elem_classes="advanced_check_row"):
+                with gr.Row(variant="compact"):
+                    paste = ToolButton(value=paste_symbol, elem_id="paste", tooltip="Read generation parameters from prompt or last generation if prompt is empty into user interface.")
+
+                    default_advanced_checkbox = False
                     advanced_checkbox = gr.Checkbox(
                         label="Advanced",
                         value=default_advanced_checkbox,
                         container=False,
                         elem_classes="min_check",
                     )
+
 
             with gr.Column(scale=1, visible=default_advanced_checkbox) as advanced_column:
                 scripts.scripts_txt2img.prepare_ui()
@@ -524,7 +525,6 @@ def create_ui():
             ).then(fn=lambda: None, _js="refresh_grid_delayed", queue=False)
 
             # Dummy bottons
-            paste = ToolButton(value=paste_symbol, elem_id="paste", visible=False)
             dropdown = gr.Dropdown(visible=False, label="Styles", show_label=False, elem_id="txt2img_styles", choices=list(shared.prompt_styles.styles), value=[], multiselect=True, tooltip="Styles")
 
             txt2img_args = dict(
@@ -532,7 +532,7 @@ def create_ui():
                 _js="submit",
                 inputs=[
                     dummy_component,
-                    prompt,
+                    prompt_row.prompt,
                     negative_prompt,
                     dropdown,
                     steps,
@@ -566,12 +566,12 @@ def create_ui():
                 show_progress=False,
             )
 
-            generate_button.click(**txt2img_args)
+            prompt_row.submit.click(**txt2img_args)
 
             res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('txt2img')}", inputs=None, outputs=None, show_progress=False)
 
             txt2img_paste_fields = [
-                (prompt, "Prompt"),
+                (prompt_row.prompt, "Prompt"),
                 (negative_prompt, "Negative prompt"),
                 (steps, "Steps"),
                 (sampler_name, "Sampler"),
@@ -597,11 +597,11 @@ def create_ui():
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                paste_button=paste, tabname="txt2img", source_text_component=prompt, source_image_component=None,
+                paste_button=paste, tabname="txt2img", source_text_component=prompt_row.prompt, source_image_component=None,
             ))
 
             txt2img_preview_params = [
-                prompt,
+                prompt_row.prompt,
                 negative_prompt,
                 steps,
                 sampler_name,
