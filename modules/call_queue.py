@@ -28,7 +28,9 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
         else:
             id_task = None
 
+        print("Wait for queue_lock")
         with queue_lock:
+            print("Acquired queue_lock")
             shared.state.begin(job=id_task)
             progress.start_task(id_task)
 
