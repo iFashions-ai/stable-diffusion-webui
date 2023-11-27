@@ -724,14 +724,14 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         dummy_component = gr.Label(visible=False)
         with gr.Row():
-            with gr.Column(scale=2, label="Input & Output"):
+            with gr.Column(scale=2, label="Input & Output", elem_id="txt2img_input_and_output"):
                 prompt_row = PromptColumn(is_img2img=False)
 
                 # Output
                 txt2img_gallery, generation_info, html_info, html_log = ui_common.create_output_panel_light("txt2img", opts.outdir_txt2img_samples)
 
                 with gr.Row(variant="compact"):
-                    paste = ToolButton(value=paste_symbol, elem_id="paste", tooltip="Read generation parameters from prompt or last generation if prompt is empty into user interface.")
+                    # paste = ToolButton(value=paste_symbol, elem_id="paste", tooltip="Read generation parameters from prompt or last generation if prompt is empty into user interface.")
 
                     default_advanced_checkbox = False
                     advanced_checkbox = gr.Checkbox(
@@ -825,7 +825,7 @@ def create_ui():
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, advanced_ui.override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                paste_button=paste, tabname="txt2img", source_text_component=prompt_row.prompt, source_image_component=None,
+                paste_button=advanced_ui.paste, tabname="txt2img", source_text_component=prompt_row.prompt, source_image_component=None,
             ))
 
             txt2img_preview_params = [

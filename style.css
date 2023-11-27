@@ -1112,3 +1112,7 @@ body.resizing .resize-handle {
     left: 7.5px;
     border-left: 1px dashed var(--border-color-primary);
 }
+
+#txt2img_input_and_output {
+    display: block;
+}
