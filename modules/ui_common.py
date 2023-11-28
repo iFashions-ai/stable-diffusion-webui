@@ -137,7 +137,8 @@ Requested path was: {f}
         generation_info = None
         with gr.Column():
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
-                open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")
+                # open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")
+                open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=False, tooltip="Open images output directory.")
 
                 if tabname != "extras":
                     save = ToolButton('💾', elem_id=f'save_{tabname}', tooltip=f"Save the image to a dedicated directory ({shared.opts.outdir_save}).")
@@ -158,7 +159,7 @@ Requested path was: {f}
             if tabname != "extras":
                 download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
 
-                with gr.Group():
+                with gr.Accordion(label="Generation Info", open=True):
                     html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
                     html_log = gr.HTML(elem_id=f'html_log_{tabname}', elem_classes="html-log")
 

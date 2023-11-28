@@ -322,7 +322,7 @@ div.block.gradio-accordion {
 .gradio-button.generate-box-skip, .gradio-button.generate-box-interrupt{
     position: absolute;
     width: 50%;
-    height: 75%;
+    height: 100%;
     display: none;
     background: #b4c0cc;
 }
@@ -1115,4 +1115,9 @@ body.resizing .resize-handle {
 
 #txt2img_input_and_output {
     display: block;
+}
+
+#txt2img_advanced_checkbox {
+    margin-bottom: 1.6em;
+    margin-left: 0.5em;
 }

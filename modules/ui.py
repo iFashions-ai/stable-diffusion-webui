@@ -727,20 +727,17 @@ def create_ui():
             with gr.Column(scale=2, label="Input & Output", elem_id="txt2img_input_and_output"):
                 prompt_row = PromptColumn(is_img2img=False)
 
-                # Output
-                txt2img_gallery, generation_info, html_info, html_log = ui_common.create_output_panel_light("txt2img", opts.outdir_txt2img_samples)
-
                 with gr.Row(variant="compact"):
-                    # paste = ToolButton(value=paste_symbol, elem_id="paste", tooltip="Read generation parameters from prompt or last generation if prompt is empty into user interface.")
-
                     default_advanced_checkbox = False
                     advanced_checkbox = gr.Checkbox(
                         label="Advanced",
                         value=default_advanced_checkbox,
-                        container=False,
                         elem_classes="min_check",
+                        elem_id="txt2img_advanced_checkbox",
                     )
 
+                # Output
+                txt2img_gallery, generation_info, html_info, html_log = ui_common.create_output_panel("txt2img", opts.outdir_txt2img_samples)
 
             with gr.Column(scale=1, visible=default_advanced_checkbox) as advanced_column:
                 advanced_ui = AdvancedColumn(is_img2img=False, interface=txt2img_interface, gallery=txt2img_gallery)
