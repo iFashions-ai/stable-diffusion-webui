@@ -215,13 +215,9 @@ class AdvancedColumn:
         scripts_runner = scripts.scripts_img2img if is_img2img else scripts.scripts_txt2img
         scripts_runner.prepare_ui()
 
-        extra_tabs = {
-            "Controlnet": "ControlNet",
-            "Style": "Style Selector for SDXL 1.0",
-        }
         with gr.Tabs(elem_id=f"{self.id_part}_extra_tabs"):
             default_prompt_negative = ""
-            with gr.Tab("Configuration", id=f"{self.id_part}_generation", render=True) as generation_tab:
+            with gr.Tab("Configuration", id=f"{self.id_part}_generation", render=True) as configuration_tab:
                 with gr.Column(variant='compact', elem_id=f"{self.id_part}_settings"):
                     with gr.Row():
                         self.negative_prompt = gr.Textbox(
@@ -330,8 +326,11 @@ class AdvancedColumn:
                         show_progress=False,
                     )
 
-            extra_model_unrelated_tabs = [generation_tab]
-
+            extra_model_unrelated_tabs = [configuration_tab]
+            extra_tabs = {
+                "Controlnet": "ControlNet",
+                "Style": "Style Selector for SDXL 1.0",
+            }
             with gr.Tab("Extentions", render=False) as extentions_tab:
                 with FormGroup(elem_id=f"{self.id_part}_script_container"):
                     self.custom_inputs = scripts.scripts_txt2img.setup_ui(ignored_scripts=set(extra_tabs.values()))
@@ -840,10 +839,10 @@ def create_ui():
     scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        
+
         # extra_tabs = gr.Tabs(elem_id="img2img_extra_tabs")
         # extra_tabs.__enter__()
-        
+
         with gr.Column(scale=2, label="Input & Output"):
             toprow = Toprow(is_img2img=True)
             with gr.Row():
@@ -1391,6 +1390,17 @@ def create_ui():
         demo.load(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[img2img_column.image_cfg_scale])
 
         modelmerger_ui.setup_ui(dummy_component=dummy_component, sd_model_checkpoint_component=settings.component_dict['sd_model_checkpoint'])
+
+        def switch_sd_version(use_sdxl: bool, sdxl_model_checkpoint: str, sdxl_vae: str, sd_model_checkpoint: str, sd_vae: str):
+            return [
+                gr.Dropdown.update(value=sdxl_model_checkpoint if use_sdxl else sd_model_checkpoint),
+                gr.Dropdown.update(value=sdxl_vae if use_sdxl else sd_vae),
+            ]
+
+        SC = shared.settings_components
+        SC["sdxl_filter_enabled"].change(switch_sd_version,
+            inputs=[SC["sdxl_filter_enabled"], SC["sdxl_default_checkpoint"], SC["sdxl_default_vae"], SC["sd15_default_checkpoint"], SC["sd15_default_vae"]],
+            outputs=[SC["sd_model_checkpoint"], SC["sd_vae"]], queue=False)
 
     loadsave.dump_defaults()
     demo.ui_loadsave = loadsave

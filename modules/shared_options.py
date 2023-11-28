@@ -158,6 +158,11 @@ options_templates.update(options_section(('sdxl', "Stable Diffusion XL"), {
     "sdxl_crop_left": OptionInfo(0, "crop left coordinate"),
     "sdxl_refiner_low_aesthetic_score": OptionInfo(2.5, "SDXL low aesthetic score", gr.Number).info("used for refiner model negative prompt"),
     "sdxl_refiner_high_aesthetic_score": OptionInfo(6.0, "SDXL high aesthetic score", gr.Number).info("used for refiner model prompt"),
+    "sdxl_filter_enabled": OptionInfo(True, "Use SDXL", gr.Checkbox).info("enable SDXL or not, automatically select default models"),
+    "sdxl_default_checkpoint": OptionInfo("juggernautXL_version6Rundiffusion.safetensors [1fe6c7ec54]", "SDXL default checkpoint", gr.Textbox).info("SDXL default checkpoint"),
+    "sdxl_default_vae": OptionInfo("sdxl-vae-fp16-fix.safetensors", "SDXL default VAE", gr.Textbox).info("SDXL default VAE"),
+    "sd15_default_checkpoint": OptionInfo("style/fashion-styles_20k_b16_vqatags.ft.safetensors [7172458d20]", "SD15 default checkpoint", gr.Textbox).info("SD15 default checkpoint"),
+    "sd15_default_vae": OptionInfo("None", "SD15 default VAE", gr.Textbox).info("SD15 default VAE"),
 }))
 
 options_templates.update(options_section(('vae', "VAE"), {

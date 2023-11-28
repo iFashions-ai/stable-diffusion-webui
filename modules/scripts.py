@@ -472,13 +472,13 @@ class ScriptRunner:
             on_before.clear()
             on_after.clear()
 
-    def create_script_ui(self, script):
+    def create_script_ui(self, script, **kwargs):
         import modules.api.models as api_models
 
         script.args_from = len(self.inputs)
         script.args_to = len(self.inputs)
 
-        controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
+        controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img, **kwargs)
 
         if controls is None:
             return
