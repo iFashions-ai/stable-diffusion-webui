@@ -4,6 +4,7 @@ import os
 import sys
 from functools import reduce
 import warnings
+import math
 
 import gradio as gr
 import gradio.utils
@@ -80,6 +81,28 @@ detect_image_size_symbol = '\U0001F4D0'  # 📐
 
 
 plaintext_to_html = ui_common.plaintext_to_html
+
+# Define aspect ratios
+sdxl_aspect_ratios = [
+    '704x1408', '704x1344', '768x1344', '768x1280', '832x1216', '832x1152',
+    '896x1152', '896x1088', '960x1088', '960x1024', '1024x1024', '1024x960',
+    '1088x960', '1088x896', '1152x896', '1152x832', '1216x832', '1280x768',
+    '1344x768', '1344x704', '1408x704', '1472x704', '1536x640', '1600x640',
+    '1664x576', '1728x576'
+]
+sd15_aspect_ratios = [
+    '512x512', '640x640', '576x704'
+]
+
+def add_ratio(x):
+    a, b = x.replace('x', ' ').split(' ')[:2]
+    a, b = int(a), int(b)
+    g = math.gcd(a, b)
+    return f'{a}×{b} | {a // g}:{b // g}'
+
+
+sdxl_aspect_ratios = list(map(add_ratio, sdxl_aspect_ratios))
+sd15_aspect_ratios = list(map(add_ratio, sd15_aspect_ratios))
 
 
 def send_gradio_gallery_to_image(x):
@@ -237,6 +260,11 @@ class AdvancedColumn:
 
                         elif category == "dimensions":
                             with FormRow():
+                                aspect_ratios = sdxl_aspect_ratios if opts.data.get("sdxl_filter_enabled", True) else sd15_aspect_ratios
+                                self.aspect_ratios_selection = gr.Radio(label='Aspect Ratios', choices=aspect_ratios,
+                                                   value=None, info='width × height',
+                                                   elem_classes='aspect_ratios')
+
                                 with gr.Column(elem_id=f"{self.id_part}_column_size", scale=4):
                                     self.width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id=f"{self.id_part}_width")
                                     self.height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id=f"{self.id_part}_height")
@@ -248,6 +276,15 @@ class AdvancedColumn:
                                     with gr.Column(elem_id=f"{self.id_part}_column_batch"):
                                         self.batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id=f"{self.id_part}_batch_count")
                                         self.batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id=f"{self.id_part}_batch_size")
+
+                            def update_aspect_ratio(value):
+                                if not value:
+                                    width, height = 1024, 1024
+                                else:
+                                    width, height = map(int, value.split()[0].split("×"))
+                                return gr.Slider.update(value=width), gr.Slider.update(value=height)
+
+                            self.aspect_ratios_selection.change(update_aspect_ratio, inputs=self.aspect_ratios_selection, outputs=[self.width, self.height])
 
                         elif category == "cfg":
                             with gr.Row():
@@ -1392,15 +1429,17 @@ def create_ui():
         modelmerger_ui.setup_ui(dummy_component=dummy_component, sd_model_checkpoint_component=settings.component_dict['sd_model_checkpoint'])
 
         def switch_sd_version(use_sdxl: bool, sdxl_model_checkpoint: str, sdxl_vae: str, sd_model_checkpoint: str, sd_vae: str):
+            aspect_ratios = sdxl_aspect_ratios if use_sdxl else sd15_aspect_ratios
             return [
                 gr.Dropdown.update(value=sdxl_model_checkpoint if use_sdxl else sd_model_checkpoint),
                 gr.Dropdown.update(value=sdxl_vae if use_sdxl else sd_vae),
+                gr.Radio.update(choices=aspect_ratios, value=None),
             ]
 
         SC = shared.settings_components
         SC["sdxl_filter_enabled"].change(switch_sd_version,
             inputs=[SC["sdxl_filter_enabled"], SC["sdxl_default_checkpoint"], SC["sdxl_default_vae"], SC["sd15_default_checkpoint"], SC["sd15_default_vae"]],
-            outputs=[SC["sd_model_checkpoint"], SC["sd_vae"]], queue=False)
+            outputs=[SC["sd_model_checkpoint"], SC["sd_vae"], advanced_ui.aspect_ratios_selection], queue=False)
 
     loadsave.dump_defaults()
     demo.ui_loadsave = loadsave

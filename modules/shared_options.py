@@ -151,6 +151,8 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "randn_source": OptionInfo("GPU", "Random number generator source.", gr.Radio, {"choices": ["GPU", "CPU", "NV"]}, infotext="RNG").info("changes seeds drastically; use CPU to produce the same picture across different videocard vendors; use NV to produce same picture as on NVidia videocards"),
     "tiling": OptionInfo(False, "Tiling", infotext='Tiling').info("produce a tileable picture"),
     "hires_fix_refiner_pass": OptionInfo("second pass", "Hires fix: which pass to enable refiner for", gr.Radio, {"choices": ["first pass", "second pass", "both passes"]}, infotext="Hires refiner"),
+    "sd15_default_checkpoint": OptionInfo("style/fashion-styles_20k_b16_vqatags.ft.safetensors [7172458d20]", "SD15 default checkpoint", gr.Textbox).info("SD15 default checkpoint"),
+    "sd15_default_vae": OptionInfo("None", "SD15 default VAE", gr.Textbox).info("SD15 default VAE"),
 }))
 
 options_templates.update(options_section(('sdxl', "Stable Diffusion XL"), {
@@ -161,8 +163,6 @@ options_templates.update(options_section(('sdxl', "Stable Diffusion XL"), {
     "sdxl_filter_enabled": OptionInfo(True, "Use SDXL", gr.Checkbox).info("enable SDXL or not, automatically select default models"),
     "sdxl_default_checkpoint": OptionInfo("juggernautXL_version6Rundiffusion.safetensors [1fe6c7ec54]", "SDXL default checkpoint", gr.Textbox).info("SDXL default checkpoint"),
     "sdxl_default_vae": OptionInfo("sdxl-vae-fp16-fix.safetensors", "SDXL default VAE", gr.Textbox).info("SDXL default VAE"),
-    "sd15_default_checkpoint": OptionInfo("style/fashion-styles_20k_b16_vqatags.ft.safetensors [7172458d20]", "SD15 default checkpoint", gr.Textbox).info("SD15 default checkpoint"),
-    "sd15_default_vae": OptionInfo("None", "SD15 default VAE", gr.Textbox).info("SD15 default VAE"),
 }))
 
 options_templates.update(options_section(('vae', "VAE"), {
