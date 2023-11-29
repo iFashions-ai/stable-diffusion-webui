@@ -83,11 +83,18 @@ detect_image_size_symbol = '\U0001F4D0'  # 📐
 plaintext_to_html = ui_common.plaintext_to_html
 
 # Define aspect ratios
+# sdxl_aspect_ratios = [
+#     '704x1408', '704x1344', '768x1344', '768x1280', '832x1216', '832x1152',
+#     '896x1152', '896x1088', '960x1088', '960x1024', '1024x1024', '1024x960',
+#     '1088x960', '1088x896', '1152x896', '1152x832', '1216x832', '1280x768',
+#     '1344x768', '1344x704', '1408x704', '1472x704', '1536x640', '1600x640',
+#     '1664x576', '1728x576'
+# ]
 sdxl_aspect_ratios = [
-    '704x1408', '704x1344', '768x1344', '768x1280', '832x1216', '832x1152',
-    '896x1152', '896x1088', '960x1088', '960x1024', '1024x1024', '1024x960',
-    '1088x960', '1088x896', '1152x896', '1152x832', '1216x832', '1280x768',
-    '1344x768', '1344x704', '1408x704', '1472x704', '1536x640', '1600x640',
+    '704x1408', '768x1344', '768x1280',
+    '896x1152', '960x1024', '1024x1024', '1024x960',
+    '1152x896', '1280x768',
+    '1344x768', '1408x704', '1536x640', '1600x640',
     '1664x576', '1728x576'
 ]
 sd15_aspect_ratios = [
@@ -259,12 +266,11 @@ class AdvancedColumn:
                             self.steps, self.sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "txt2img")
 
                         elif category == "dimensions":
+                            aspect_ratios = sdxl_aspect_ratios if opts.data.get("sdxl_filter_enabled", True) else sd15_aspect_ratios
+                            self.aspect_ratios_selection = gr.Radio(label='Aspect Ratios', choices=aspect_ratios,
+                                                value=None, info='width × height',
+                                                elem_classes='aspect_ratios')
                             with FormRow():
-                                aspect_ratios = sdxl_aspect_ratios if opts.data.get("sdxl_filter_enabled", True) else sd15_aspect_ratios
-                                self.aspect_ratios_selection = gr.Radio(label='Aspect Ratios', choices=aspect_ratios,
-                                                   value=None, info='width × height',
-                                                   elem_classes='aspect_ratios')
-
                                 with gr.Column(elem_id=f"{self.id_part}_column_size", scale=4):
                                     self.width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id=f"{self.id_part}_width")
                                     self.height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id=f"{self.id_part}_height")
