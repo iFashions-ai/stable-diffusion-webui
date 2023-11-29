@@ -1408,7 +1408,11 @@ def create_ui():
 
             for interface, label, ifid in sorted_interfaces:
                 if label in shared.opts.hidden_tabs:
+                    with gr.Tabs(visible=False):
+                        with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
+                            interface.render()
                     continue
+
                 with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
 
