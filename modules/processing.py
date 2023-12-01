@@ -233,13 +233,15 @@ class StableDiffusionProcessing:
         self.cached_uc = StableDiffusionProcessing.cached_uc
         self.cached_c = StableDiffusionProcessing.cached_c
 
+        self._sd_model = shared.sd_model
+
     @property
     def sd_model(self):
-        return shared.sd_model
+        return self._sd_model
 
     @sd_model.setter
     def sd_model(self, value):
-        pass
+        self._sd_model = value
 
     @property
     def scripts(self):
@@ -857,6 +859,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             p.setup_conds()
 
+            # foo_pc = torch.load("/home/longc/data/code/Fooocus/foo_positive_cond.pt")
+            # foo_nc = torch.load("/home/longc/data/code/Fooocus/foo_negative_cond.pt")
+            # p.uc[0][0].cond["crossattn"][...] = foo_nc[0][0][0]
+            # p.c.batch[0][0].schedules[0].cond["crossattn"][...] = foo_pc[0][0][0]
+
             for comment in model_hijack.comments:
                 p.comment(comment)
 
@@ -1347,6 +1354,72 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         return res
 
 
+@torch.no_grad()
+@torch.inference_mode()
+def encode_vae_inpaint(pixels, mask, sd_model):
+    mask = np.array(mask.convert("L"))[None]
+    mask = mask.astype(np.float32) / 255.0
+    mask = torch.from_numpy(mask).to(pixels)
+
+    assert mask.ndim == 3 and pixels.ndim == 4
+    assert mask.shape[1] == pixels.shape[2]
+    assert mask.shape[2] == pixels.shape[3]
+
+    w = mask.round()[None]
+    pixels = pixels * (1 - w) + 0.5 * w
+
+    # latent = vae.encode(pixels)
+    latent = images_tensor_to_samples(pixels, approximation_indexes.get(opts.sd_vae_encode_method), sd_model)
+    B, C, H, W = latent.shape
+
+    latent_mask = mask[:, None, :, :]
+    latent_mask = torch.nn.functional.interpolate(latent_mask, size=(H * 8, W * 8), mode="bilinear").round()
+    latent_mask = torch.nn.functional.max_pool2d(latent_mask, (8, 8)).round()
+
+    return latent, latent_mask
+
+inpaint_head_model = None
+
+
+class InpaintHead(torch.nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.head = torch.nn.Parameter(torch.empty(size=(320, 5, 3, 3), device='cpu'))
+
+    def __call__(self, x):
+        x = torch.nn.functional.pad(x, (1, 1, 1, 1), "replicate")
+        return torch.nn.functional.conv2d(input=x, weight=self.head)
+
+
+def patch_fooocus_inpaint(inpaint_latent, inpaint_latent_mask, model):
+    global inpaint_head_model
+    import copy
+
+    if inpaint_head_model is None:
+        inpaint_head_model_path = '/home/longc/data/code/Fooocus/models/inpaint/fooocus_inpaint_head.pth'
+        inpaint_head_model = InpaintHead()
+        sd = torch.load(inpaint_head_model_path, map_location='cpu')
+        inpaint_head_model.load_state_dict(sd)
+
+    scale_factor = 0.13025
+    feed = torch.cat([
+        inpaint_latent_mask,
+        inpaint_latent * scale_factor
+    ], dim=1)
+
+    inpaint_head_model.to(device=feed.device, dtype=feed.dtype)
+    inpaint_head_feature = inpaint_head_model(feed)
+
+    def input_block_patch(h, index):
+        if index == 0:
+            h = h + inpaint_head_feature.to(h)
+        return h
+
+    m = model.clone()
+    m.add_patch(input_block_patch, "input_block")
+    return m
+
+
 @dataclass(repr=False)
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     init_images: list = None
@@ -1394,7 +1467,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     def init(self, all_prompts, all_seeds, all_subseeds):
         self.image_cfg_scale: float = self.image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
 
-        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         crop_region = None
 
         image_mask = self.image_mask
@@ -1500,6 +1572,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         self.init_latent = images_tensor_to_samples(image, approximation_indexes.get(opts.sd_vae_encode_method), self.sd_model)
         devices.torch_gc()
+
+        # Fooocus patch
+        latent_inpaint_foo, latent_mask_foo = encode_vae_inpaint(image, image_mask, self.sd_model)
+
+        self.sd_model = patch_fooocus_inpaint(latent_inpaint_foo, latent_mask_foo, self.sd_model)
+        devices.torch_gc()
+
+        self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
         if self.resize_mode == 3:
             self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")

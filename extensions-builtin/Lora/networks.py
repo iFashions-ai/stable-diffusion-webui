@@ -4,6 +4,7 @@ import re
 
 import lora_patches
 import network
+import network_fooocus
 import network_lora
 import network_glora
 import network_hada
@@ -21,6 +22,7 @@ import modules.textual_inversion.textual_inversion as textual_inversion
 from lora_logger import logger
 
 module_types = [
+    network_fooocus.ModuleTypeFooocus(),
     network_lora.ModuleTypeLora(),
     network_hada.ModuleTypeHada(),
     network_ia3.ModuleTypeIa3(),

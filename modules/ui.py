@@ -371,7 +371,7 @@ class AdvancedColumn:
 
             extra_model_unrelated_tabs = [configuration_tab]
             extra_tabs = {
-                "Controlnet": "ControlNet",
+                "ImagePrompt": "ControlNet",
                 "Style": "Style Selector for SDXL 1.0",
             }
             with gr.Tab("Extentions", render=False) as extentions_tab:
