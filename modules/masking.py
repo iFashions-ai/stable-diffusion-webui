@@ -1,4 +1,5 @@
 from PIL import Image, ImageFilter, ImageOps
+import numpy as np
 
 
 def get_crop_region(mask, pad=0):
@@ -97,3 +98,26 @@ def fill(image, mask):
 
     return image_mod.convert("RGB")
 
+
+def box_blur(x, k):
+    x = Image.fromarray(x)
+    x = x.filter(ImageFilter.BoxBlur(k))
+    return np.array(x)
+
+
+def fooocus_fill(image, mask):
+    if isinstance(image, Image.Image):
+        image = np.array(image)
+    if isinstance(mask, Image.Image):
+        mask = np.array(mask)
+    current_image = image.copy()
+    raw_image = image.copy()
+    area = np.where(mask < 127)
+    store = raw_image[area]
+
+    for k, repeats in [(512, 2), (256, 2), (128, 4), (64, 4), (33, 8), (15, 8), (5, 16), (3, 16)]:
+        for _ in range(repeats):
+            current_image = box_blur(current_image, k)
+            current_image[area] = store
+
+    return current_image

@@ -1401,7 +1401,7 @@ def patch_fooocus_inpaint(inpaint_latent, inpaint_latent_mask, model):
         sd = torch.load(inpaint_head_model_path, map_location='cpu')
         inpaint_head_model.load_state_dict(sd)
 
-    scale_factor = 0.13025
+    scale_factor = 1  # 0.13025
     feed = torch.cat([
         inpaint_latent_mask,
         inpaint_latent * scale_factor
@@ -1491,6 +1491,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur_y)
                 image_mask = Image.fromarray(np_mask)
 
+            print("inpaint_full_res", self.inpaint_full_res, self.inpaint_full_res_padding)
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
@@ -1509,12 +1510,17 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             self.overlay_images = []
 
+        # image_mask = Image.open("/home/longc/data/code/Fooocus/interested_mask.png")
+        # self.mask_for_overlay = image_mask
+        # self.image_mask = image_mask
+
         latent_mask = self.latent_mask if self.latent_mask is not None else image_mask
 
         add_color_corrections = opts.img2img_color_correction and self.color_corrections is None
         if add_color_corrections:
             self.color_corrections = []
         imgs = []
+        imgs_raw = []
         for img in self.init_images:
 
             # Save init image
@@ -1524,8 +1530,15 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             image = images.flatten(img, opts.img2img_background_color)
 
+            print("CROP", crop_region, self.resize_mode)
             if crop_region is None and self.resize_mode != 3:
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
+
+            # # DEBUG
+            # image_raw = Image.open("/home/longc/data/code/Fooocus/interested_image.png").convert("RGB")
+            # image = Image.open("/home/longc/data/code/Fooocus/interested_fill.png").convert("RGB")
+            # self.height = image.height
+            # self.width = image.width
 
             if image_mask is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
@@ -1538,9 +1551,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = image.crop(crop_region)
                 image = images.resize_image(2, image, self.width, self.height)
 
+            image_raw = image.copy()
             if image_mask is not None:
                 if self.inpainting_fill != 1:
-                    image = masking.fill(image, latent_mask)
+                    print("FILL", image)
+                    image = masking.fooocus_fill(image, latent_mask)
 
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
@@ -1548,10 +1563,15 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
 
+            image_raw = np.array(image_raw).astype(np.float32) / 255.0
+            image_raw = np.moveaxis(image_raw, 2, 0)
+
             imgs.append(image)
+            imgs_raw.append(image_raw)
 
         if len(imgs) == 1:
             batch_images = np.expand_dims(imgs[0], axis=0).repeat(self.batch_size, axis=0)
+            batch_images_raw = np.expand_dims(imgs_raw[0], axis=0).repeat(self.batch_size, axis=0)
             if self.overlay_images is not None:
                 self.overlay_images = self.overlay_images * self.batch_size
 
@@ -1561,11 +1581,15 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         elif len(imgs) <= self.batch_size:
             self.batch_size = len(imgs)
             batch_images = np.array(imgs)
+            batch_images_raw = np.array(imgs_raw)
         else:
             raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
         image = torch.from_numpy(batch_images)
         image = image.to(shared.device, dtype=devices.dtype_vae)
+
+        image_raw = torch.from_numpy(batch_images_raw)
+        image_raw = image_raw.to(shared.device, dtype=devices.dtype_vae)
 
         if opts.sd_vae_encode_method != 'Full':
             self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
@@ -1574,7 +1598,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         devices.torch_gc()
 
         # Fooocus patch
-        latent_inpaint_foo, latent_mask_foo = encode_vae_inpaint(image, image_mask, self.sd_model)
+        latent_inpaint_foo, latent_mask_foo = encode_vae_inpaint(image_raw, image_mask, self.sd_model)
 
         self.sd_model = patch_fooocus_inpaint(latent_inpaint_foo, latent_mask_foo, self.sd_model)
         devices.torch_gc()
