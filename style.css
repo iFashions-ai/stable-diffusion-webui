@@ -1113,13 +1113,17 @@ body.resizing .resize-handle {
     border-left: 1px dashed var(--border-color-primary);
 }
 
-#txt2img_input_and_output {
+#txt2img_input_and_output #img2img_input_and_output {
     display: block;
 }
 
-#txt2img_advanced_checkbox {
-    margin-bottom: 1.6em;
+#txt2img_advanced_checkbox #img2img_advanced_checkbox {
+    margin-bottom: 1.7em;
     margin-left: 0.5em;
+}
+
+#img2img_prompt_container {
+    flex-grow: 0 !important;
 }
 
 .aspect_ratios label {

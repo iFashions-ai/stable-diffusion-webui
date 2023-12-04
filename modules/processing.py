@@ -1598,10 +1598,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         devices.torch_gc()
 
         # Fooocus patch
-        latent_inpaint_foo, latent_mask_foo = encode_vae_inpaint(image_raw, image_mask, self.sd_model)
-
-        self.sd_model = patch_fooocus_inpaint(latent_inpaint_foo, latent_mask_foo, self.sd_model)
-        devices.torch_gc()
+        if image_mask is not None:
+            latent_inpaint_foo, latent_mask_foo = encode_vae_inpaint(image_raw, image_mask, self.sd_model)
+            self.sd_model = patch_fooocus_inpaint(latent_inpaint_foo, latent_mask_foo, self.sd_model)
+            devices.torch_gc()
 
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
