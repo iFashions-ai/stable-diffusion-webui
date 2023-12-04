@@ -29,10 +29,11 @@ def register_default_extra_networks():
 
 
 class ExtraNetworkParams:
-    def __init__(self, items=None):
+    def __init__(self, items=None, origin: str=None):
         self.items = items or []
         self.positional = []
         self.named = {}
+        self.origin = origin or ""
 
         for item in self.items:
             parts = item.split('=', 2) if isinstance(item, str) else [item]
@@ -40,6 +41,9 @@ class ExtraNetworkParams:
                 self.named[parts[0]] = parts[1]
             else:
                 self.positional.append(item)
+
+    def __repr__(self) -> str:
+        return self.origin
 
     def __eq__(self, other):
         return self.items == other.items
@@ -179,10 +183,11 @@ def parse_prompt(prompt):
     res = defaultdict(list)
 
     def found(m):
+        raw = m.group(0)
         name = m.group(1)
         args = m.group(2)
 
-        res[name].append(ExtraNetworkParams(items=args.split(":")))
+        res[name].append(ExtraNetworkParams(items=args.split(":"), origin=raw))
 
         return ""
 

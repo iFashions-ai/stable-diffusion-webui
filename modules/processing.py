@@ -1555,7 +1555,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if image_mask is not None:
                 if self.inpainting_fill != 1:
                     print("FILL", image)
+                    # image.save("origin.png")
                     image = masking.fooocus_fill(image, latent_mask)
+                    # image = masking.fill(image, latent_mask)
+                    # image.save("test.png")
 
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))

@@ -120,4 +120,4 @@ def fooocus_fill(image, mask):
             current_image = box_blur(current_image, k)
             current_image[area] = store
 
-    return current_image
+    return Image.fromarray(current_image)
