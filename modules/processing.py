@@ -5,6 +5,7 @@ import math
 import os
 import sys
 import hashlib
+from pathlib import Path
 from dataclasses import dataclass, field
 
 import torch
@@ -28,6 +29,7 @@ import modules.images as images
 import modules.styles
 import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
+from modules.fooocus_inpainting import download_fooocus_inpaint_models, patch_fooocus_inpaint
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
@@ -192,6 +194,7 @@ class StableDiffusionProcessing:
     seeds: list = field(default=None, init=False)
     subseeds: list = field(default=None, init=False)
     extra_network_data: dict = field(default=None, init=False)
+    internal_extra_network_prompt: str = ""
 
     user: str = field(default=None, init=False)
 
@@ -475,6 +478,8 @@ class StableDiffusionProcessing:
         return self.c, self.uc
 
     def parse_extra_network_prompts(self):
+        if self.internal_extra_network_prompt:
+            self.prompts = [p + self.internal_extra_network_prompt for p in self.prompts]
         self.prompts, self.extra_network_data = extra_networks.parse_prompts(self.prompts)
 
     def save_samples(self) -> bool:
@@ -1378,48 +1383,6 @@ def encode_vae_inpaint(pixels, mask, sd_model):
 
     return latent, latent_mask
 
-inpaint_head_model = None
-
-
-class InpaintHead(torch.nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.head = torch.nn.Parameter(torch.empty(size=(320, 5, 3, 3), device='cpu'))
-
-    def __call__(self, x):
-        x = torch.nn.functional.pad(x, (1, 1, 1, 1), "replicate")
-        return torch.nn.functional.conv2d(input=x, weight=self.head)
-
-
-def patch_fooocus_inpaint(inpaint_latent, inpaint_latent_mask, model):
-    global inpaint_head_model
-    import copy
-
-    if inpaint_head_model is None:
-        inpaint_head_model_path = '/home/longc/data/code/Fooocus/models/inpaint/fooocus_inpaint_head.pth'
-        inpaint_head_model = InpaintHead()
-        sd = torch.load(inpaint_head_model_path, map_location='cpu')
-        inpaint_head_model.load_state_dict(sd)
-
-    scale_factor = 1  # 0.13025
-    feed = torch.cat([
-        inpaint_latent_mask,
-        inpaint_latent * scale_factor
-    ], dim=1)
-
-    inpaint_head_model.to(device=feed.device, dtype=feed.dtype)
-    inpaint_head_feature = inpaint_head_model(feed)
-
-    def input_block_patch(h, index):
-        if index == 0:
-            h = h + inpaint_head_feature.to(h)
-        return h
-
-    m = model.clone()
-    m.add_patch(input_block_patch, "input_block")
-    return m
-
-
 @dataclass(repr=False)
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     init_images: list = None
@@ -1430,6 +1393,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     mask_blur_x: int = 4
     mask_blur_y: int = 4
     mask_blur: int = None
+    inpainting_method: str = None
     inpainting_fill: int = 0
     inpaint_full_res: bool = True
     inpaint_full_res_padding: int = 0
@@ -1451,6 +1415,12 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_mask = self.mask
         self.mask = None
         self.initial_noise_multiplier = opts.initial_noise_multiplier if self.initial_noise_multiplier is None else self.initial_noise_multiplier
+
+        # Prepare inpainting models
+        self.is_fooocus_inpainting = self.inpainting_method != 'SDWebui'
+        self.inpaint_lora_path, self.inpaint_head_path = None, None
+        if self.image_mask is not None and self.is_fooocus_inpainting:
+            self.inpaint_head_path, self.inpaint_lora_path = download_fooocus_inpaint_models(version=opts.img2img_inpaint_fooocus_model_version)
 
     @property
     def mask_blur(self):
@@ -1491,7 +1461,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur_y)
                 image_mask = Image.fromarray(np_mask)
 
-            print("inpaint_full_res", self.inpaint_full_res, self.inpaint_full_res_padding)
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
@@ -1530,7 +1499,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             image = images.flatten(img, opts.img2img_background_color)
 
-            print("CROP", crop_region, self.resize_mode)
             if crop_region is None and self.resize_mode != 3:
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
 
@@ -1554,7 +1522,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image_raw = image.copy()
             if image_mask is not None:
                 if self.inpainting_fill != 1:
-                    print("FILL", image)
+                    # print("FILL", image)
                     # image.save("origin.png")
                     image = masking.fooocus_fill(image, latent_mask)
                     # image = masking.fill(image, latent_mask)
@@ -1601,10 +1569,15 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         devices.torch_gc()
 
         # Fooocus patch
-        if image_mask is not None:
+        if self.is_fooocus_inpainting and image_mask is not None:
+            # Head
             latent_inpaint_foo, latent_mask_foo = encode_vae_inpaint(image_raw, image_mask, self.sd_model)
-            self.sd_model = patch_fooocus_inpaint(latent_inpaint_foo, latent_mask_foo, self.sd_model)
+            self.sd_model = patch_fooocus_inpaint(latent_inpaint_foo, latent_mask_foo, self.sd_model, inpaint_head_model_path=self.inpaint_head_path)
             devices.torch_gc()
+
+            # Lora
+            inpaint_lora_name = Path(self.inpaint_lora_path).stem
+            self.internal_extra_network_prompt += f"<lora:{inpaint_lora_name}:1>"
 
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 

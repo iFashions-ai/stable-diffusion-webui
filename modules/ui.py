@@ -521,6 +521,9 @@ class Img2ImgColumn:
                             with gr.Column(scale=4):
                                 self.inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
 
+                        with FormRow():
+                            self.inpainting_method = gr.Radio(label='Inpainting method', choices=["SDWebui", "Fooocus"], value='Fooocus', elem_id="img2img_inpainting_method")
+
                         def select_img2img_tab(tab):
                             return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
 
@@ -835,6 +838,7 @@ def create_ui():
             inputs=[
                 dummy_component,
                 dummy_component,
+                img2img_column.inpainting_method,
                 prompt_row.prompt,
                 advanced_ui.negative_prompt,
                 dropdown,
