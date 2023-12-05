@@ -284,6 +284,9 @@ class AdvancedColumn:
                                         self.batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id=f"{self.id_part}_batch_count")
                                         self.batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id=f"{self.id_part}_batch_size")
 
+                            with FormRow():
+                                self.resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Resize and fill")
+
                             def update_aspect_ratio(value):
                                 if not value:
                                     width, height = 1024, 1024
@@ -405,7 +408,7 @@ class Img2ImgColumn:
                 with gr.Row(variant="compact", elem_id=f"img2img_copy_to_{tab_name}"):
                     gr.HTML("Copy image to: ", elem_id=f"img2img_label_copy_to_{tab_name}")
 
-                    for title, name in zip(['Img2img', 'Draw', 'Inpaint'], ['img2img', 'sketch', 'inpaint']):
+                    for title, name in zip(['Img2img', 'Inpaint'], ['img2img', 'inpaint']):
                         if name == tab_name:
                             gr.Button(title, interactive=False)
                             copy_image_destinations[name] = elem
@@ -477,20 +480,17 @@ class Img2ImgColumn:
                 return img
 
             for button, name, elem in copy_image_buttons:
-                button.click(
-                    fn=copy_image,
-                    inputs=[elem],
-                    outputs=[copy_image_destinations[name]],
-                )
+                button: gr.Button
                 button.click(
                     fn=lambda: None,
                     _js=f"switch_to_{name.replace(' ', '_')}",
                     inputs=[],
                     outputs=[],
+                ).then(
+                    fn=copy_image,
+                    inputs=[elem],
+                    outputs=[copy_image_destinations[name]],
                 )
-
-            with FormRow():
-                self.resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
             scripts.scripts_img2img.prepare_ui()
 
@@ -811,33 +811,19 @@ def create_ui():
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         with gr.Row():
-            with gr.Column(scale=2, label="Image2Image Column"):
-                img2img_column = Img2ImgColumn(dummy_component)
-
-            with gr.Column(scale=2, label="Input & Output", elem_id="img2img_input_and_output"):
+            with gr.Column(scale=2, label="Input & Output", elem_id="img2img_input_and_output", render=False) as img2img_io_column:
                 prompt_row = PromptColumn(is_img2img=True)
-
-                with gr.Row(variant="compact"):
-                    default_advanced_checkbox = False
-                    advanced_checkbox = gr.Checkbox(
-                        label="Advanced",
-                        value=default_advanced_checkbox,
-                        elem_classes="min_check",
-                        elem_id="img2img_advanced_checkbox",
-                    )
-
                 # Output
                 img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
 
-            with gr.Column(scale=2, visible=default_advanced_checkbox) as advanced_column:
-                advanced_ui = AdvancedColumn(is_img2img=True, interface=img2img_interface, gallery=img2img_gallery)
+            with gr.Column(scale=2, label="Image2Image Column"):
+                img2img_column = Img2ImgColumn(dummy_component)
 
-            advanced_checkbox.change(
-                lambda x: gr.update(visible=x),
-                advanced_checkbox,
-                advanced_column,
-                queue=False,
-            ).then(fn=lambda: None, _js="refresh_grid_delayed", queue=False)
+                default_advanced_checkbox = False
+                with gr.Accordion(label="Advanced options", open=default_advanced_checkbox) as advanced_column:
+                    advanced_ui = AdvancedColumn(is_img2img=True, interface=img2img_interface, gallery=img2img_gallery)
+
+            img2img_io_column.render()
 
         # Dummy bottons
         scale_by = gr.Slider(visible=False, minimum=0.05, maximum=4.0, step=0.05, label="Scale", value=1.0, elem_id="img2img_scale")
@@ -873,7 +859,7 @@ def create_ui():
                 advanced_ui.height,
                 advanced_ui.width,
                 scale_by,
-                img2img_column.resize_mode,
+                advanced_ui.resize_mode,
                 img2img_column.inpaint_full_res,
                 img2img_column.inpaint_full_res_padding,
                 img2img_column.inpainting_mask_invert,
@@ -897,9 +883,17 @@ def create_ui():
         prompt_row.prompt.submit(**img2img_args)
         prompt_row.submit.click(**img2img_args)
 
+        def update_image_size(w, h, _):
+            downscale = 16
+            if w:
+                w = int(w // downscale) * downscale
+            if h:
+                h = int(h // downscale) * downscale
+            return w or gr.update(), h or gr.update()
+
         advanced_ui.res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('img2img')}", inputs=None, outputs=None, show_progress=False)
         advanced_ui.detect_image_size_btn.click(
-            fn=lambda w, h, _: (w or gr.update(), h or gr.update()),
+            fn=update_image_size,
             _js="currentImg2imgSourceResolution",
             inputs=[dummy_component, dummy_component, dummy_component],
             outputs=[advanced_ui.width, advanced_ui.height],
