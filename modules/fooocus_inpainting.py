@@ -43,7 +43,7 @@ def patch_fooocus_inpaint(inpaint_latent, inpaint_latent_mask, model, inpaint_he
         return h
 
     m = model.clone()
-    m.add_patch(input_block_patch, "input_block")
+    m.add_patch(input_block_patch, "input_block", "fooocus_inpaint_head")
     return m
 
 

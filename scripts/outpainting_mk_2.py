@@ -123,6 +123,7 @@ class Script(scripts.Script):
         return "Outpainting mk2"
 
     def show(self, is_img2img):
+        # return scripts.AlwaysVisible if is_img2img else False
         return is_img2img
 
     def ui(self, is_img2img):
@@ -146,7 +147,7 @@ class Script(scripts.Script):
         process_height = p.height
 
         p.inpaint_full_res = False
-        p.inpainting_fill = 1
+        # p.inpainting_fill = 1  # use ui config
         p.do_not_save_samples = True
         p.do_not_save_grid = True
 

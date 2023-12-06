@@ -1418,9 +1418,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         # Prepare inpainting models
         self.is_fooocus_inpainting = self.inpainting_method != 'SDWebui'
-        self.inpaint_lora_path, self.inpaint_head_path = None, None
-        if self.image_mask is not None and self.is_fooocus_inpainting:
-            self.inpaint_head_path, self.inpaint_lora_path = download_fooocus_inpaint_models(version=opts.img2img_inpaint_fooocus_model_version)
 
     @property
     def mask_blur(self):
@@ -1440,6 +1437,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         crop_region = None
 
         image_mask = self.image_mask
+        # Load inpainting model
+        inpaint_lora_path, inpaint_head_path = None, None
+        if image_mask is not None and self.is_fooocus_inpainting:
+            inpaint_head_path, inpaint_lora_path = download_fooocus_inpaint_models(version=opts.img2img_inpaint_fooocus_model_version)
 
         if image_mask is not None:
             # image_mask is passed in as RGBA by Gradio to support alpha masks,
@@ -1522,11 +1523,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image_raw = image.copy()
             if image_mask is not None:
                 if self.inpainting_fill != 1:
-                    # print("FILL", image)
-                    # image.save("origin.png")
-                    image = masking.fooocus_fill(image, latent_mask)
-                    # image = masking.fill(image, latent_mask)
-                    # image.save("test.png")
+                    fill_fn = masking.fooocus_fill if self.is_fooocus_inpainting else masking.fill
+                    image = fill_fn(image, latent_mask)
+                    # if self.is_fooocus_inpainting:
+                    #     self.denoising_strength = 1.0
 
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
@@ -1572,12 +1572,12 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if self.is_fooocus_inpainting and image_mask is not None:
             # Head
             latent_inpaint_foo, latent_mask_foo = encode_vae_inpaint(image_raw, image_mask, self.sd_model)
-            self.sd_model = patch_fooocus_inpaint(latent_inpaint_foo, latent_mask_foo, self.sd_model, inpaint_head_model_path=self.inpaint_head_path)
-            devices.torch_gc()
+            self.sd_model = patch_fooocus_inpaint(latent_inpaint_foo, latent_mask_foo, self.sd_model, inpaint_head_model_path=inpaint_head_path)
 
             # Lora
-            inpaint_lora_name = Path(self.inpaint_lora_path).stem
-            self.internal_extra_network_prompt += f"<lora:{inpaint_lora_name}:1>"
+            inpaint_lora_name = Path(inpaint_lora_path).stem
+            if inpaint_lora_name not in self.internal_extra_network_prompt:
+                self.internal_extra_network_prompt += f"<lora:{inpaint_lora_name}:1>"
 
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
