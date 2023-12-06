@@ -391,11 +391,13 @@ class AdvancedColumn:
                         scripts_runner.create_script_ui(extra_script)
                         extra_model_unrelated_tabs.append(extra_tab)
 
-            extentions_tab.render()
 
-            with gr.Tab("Extra Models") as extra_model_tab:
-                extra_networks_ui = ui_extra_networks.create_ui(interface, extra_model_unrelated_tabs, self.id_part, related_tabs=[extra_model_tab])
-                ui_extra_networks.setup_ui(extra_networks_ui, gallery)
+            with gr.Tabs(visible=False):
+                extentions_tab.render()
+
+                with gr.Tab("Extra Models") as extra_model_tab:
+                    extra_networks_ui = ui_extra_networks.create_ui(interface, extra_model_unrelated_tabs, self.id_part, related_tabs=[extra_model_tab])
+                    ui_extra_networks.setup_ui(extra_networks_ui, gallery)
 
 
 class Img2ImgColumn:
@@ -405,7 +407,7 @@ class Img2ImgColumn:
             copy_image_destinations = {}
 
             def add_copy_image_controls(tab_name, elem):
-                with gr.Row(variant="compact", elem_id=f"img2img_copy_to_{tab_name}"):
+                with gr.Row(variant="compact", elem_id=f"img2img_copy_to_{tab_name}", visible=False):
                     gr.HTML("Copy image to: ", elem_id=f"img2img_label_copy_to_{tab_name}")
 
                     for title, name in zip(['Img2img', 'Inpaint'], ['img2img', 'inpaint']):
@@ -492,7 +494,12 @@ class Img2ImgColumn:
                     outputs=[copy_image_destinations[name]],
                 )
 
-            for category in ordered_ui_categories():
+            ordered_uis = list(ordered_ui_categories())
+            if "denoising" in ordered_uis:
+                ordered_uis.pop(ordered_uis.index("denoising"))
+                ordered_uis.insert(0, "denoising")
+
+            for category in ordered_uis:
                 if category == "denoising":
                     self.denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
 
@@ -501,7 +508,8 @@ class Img2ImgColumn:
                         self.image_cfg_scale = gr.Slider(minimum=0, maximum=3.0, step=0.05, label='Image CFG Scale', value=1.5, elem_id="img2img_image_cfg_scale", visible=False)
 
                 elif category == "inpaint":
-                    with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
+                    # with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
+                    with gr.Accordion(label="Inpaint options", elem_id="inpaint_controls", open=True, visible=False) as inpaint_controls:
                         with FormRow():
                             self.mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
                             self.mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
@@ -1321,10 +1329,9 @@ def create_ui():
                     with gr.Tabs(visible=False):
                         with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                             interface.render()
-                    continue
-
-                with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
-                    interface.render()
+                else:
+                    with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
+                        interface.render()
 
                 if ifid not in ["extensions", "settings"]:
                     loadsave.add_block(interface, ifid)

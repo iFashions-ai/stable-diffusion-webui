@@ -134,7 +134,7 @@ def img2img(id_task: str, mode: int, inpainting_method: str, enable_outpainting,
     override_settings = create_override_settings_dict(override_settings_texts)
 
     is_batch = mode == 5
-    is_inpaint = mode == 2
+    is_inpaint = mode in [2, 4]
     if enable_outpainting and is_inpaint:
         args = ("Outpainting mk2",) + args[1:]
 
