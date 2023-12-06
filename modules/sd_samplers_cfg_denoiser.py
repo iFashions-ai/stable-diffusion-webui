@@ -38,14 +38,13 @@ class CFGDenoiser(torch.nn.Module):
     negative prompt.
     """
 
-    def __init__(self, sampler, sd_model=None):
+    def __init__(self, sampler):
         super().__init__()
         self.model_wrap = None
         self.mask = None
         self.nmask = None
         self.init_latent = None
         self.steps = None
-        self.sd_model = sd_model
         """number of steps as specified by user in UI"""
 
         self.total_steps = None
@@ -58,6 +57,10 @@ class CFGDenoiser(torch.nn.Module):
         self.model_wrap = None
         self.p = None
         self.mask_before_denoising = False
+
+    @property
+    def sd_model(self):
+        return self.p.sd_model if self.p is not None else None
 
     @property
     def inner_model(self):

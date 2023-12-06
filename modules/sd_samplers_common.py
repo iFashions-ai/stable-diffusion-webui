@@ -182,7 +182,7 @@ def apply_refiner(cfg_denoiser):
     cfg_denoiser.p.extra_generation_params['Refiner switch at'] = refiner_switch_at
 
     with sd_models.SkipWritingToConfig():
-        sd_models.reload_model_weights(info=refiner_checkpoint_info)
+        cfg_denoiser.p.sd_model = sd_models.reload_model_weights(info=refiner_checkpoint_info)
 
     devices.torch_gc()
     cfg_denoiser.p.setup_conds()
