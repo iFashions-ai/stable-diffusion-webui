@@ -130,7 +130,7 @@ class Script(scripts.Script):
         if not is_img2img:
             return None
 
-        info = gr.HTML("<p style=\"margin-bottom:0.75em\">Recommended settings: Sampling Steps: 80-100, Sampler: Euler a, Denoising strength: 0.8</p>")
+        info = gr.HTML("<p style=\"margin-bottom:0.75em\">Recommended settings: Masked content: fill, Denoising strength > 0.9</p>")
 
         pixels = gr.Slider(label="Pixels to expand", minimum=8, maximum=256, step=8, value=128, elem_id=self.elem_id("pixels"))
         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=8, elem_id=self.elem_id("mask_blur"))

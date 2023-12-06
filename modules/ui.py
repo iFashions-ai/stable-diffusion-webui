@@ -243,7 +243,6 @@ class AdvancedColumn:
         self.id_part = id_part
 
         scripts_runner = scripts.scripts_img2img if is_img2img else scripts.scripts_txt2img
-        scripts_runner.prepare_ui()
 
         with gr.Tabs(elem_id=f"{self.id_part}_extra_tabs"):
             default_prompt_negative = ""
@@ -379,9 +378,10 @@ class AdvancedColumn:
                 "ImagePrompt": "ControlNet",
                 "Style": "Style Selector for SDXL 1.0",
             }
+            ignored_scripts = set(extra_tabs.values()) | {"Outpainting mk2"}
             with gr.Tab("Extentions", render=False) as extentions_tab:
                 with FormGroup(elem_id=f"{self.id_part}_script_container"):
-                    self.custom_inputs = scripts_runner.setup_ui(ignored_scripts=set(extra_tabs.values()))
+                    self.custom_inputs = scripts_runner.setup_ui(ignored_scripts=ignored_scripts)
             extra_model_unrelated_tabs.append(extentions_tab)
 
             for tab_name, tab_key in extra_tabs.items():
@@ -492,8 +492,6 @@ class Img2ImgColumn:
                     outputs=[copy_image_destinations[name]],
                 )
 
-            scripts.scripts_img2img.prepare_ui()
-
             for category in ordered_ui_categories():
                 if category == "denoising":
                     self.denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
@@ -524,15 +522,24 @@ class Img2ImgColumn:
                         with FormRow():
                             self.inpainting_method = gr.Radio(label='Inpainting method', choices=["SDWebui", "Fooocus"], value='Fooocus', elem_id="img2img_inpainting_method")
 
-                        def select_img2img_tab(tab):
-                            return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
+                elif category == "scripts":
+                    with gr.Column():
+                        with gr.Accordion("Outpaint", visible=False, open=False) as outpainting_controls:
+                            key = "Outpainting mk2"
+                            extra_script = scripts.scripts_img2img.title_map.get(key.lower())
+                            with gr.Column():
+                                self.outpainting_enabled = gr.Checkbox(label="Enable outpaint", value=False)
+                                scripts.scripts_img2img.create_script_ui(extra_script)
 
-                        for i, elem in enumerate(img2img_tabs):
-                            elem.select(
-                                fn=lambda tab=i: select_img2img_tab(tab),
-                                inputs=[],
-                                outputs=[inpaint_controls, self.mask_alpha],
-                            )
+            def select_img2img_tab(tab):
+                return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
+
+            for i, elem in enumerate(img2img_tabs):
+                elem.select(
+                    fn=lambda tab=i: select_img2img_tab(tab),
+                    inputs=[],
+                    outputs=[inpaint_controls, outpainting_controls, self.mask_alpha],
+                )
 
 
 class Toprow:
@@ -694,6 +701,7 @@ def create_ui():
     scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
+        scripts.scripts_txt2img.prepare_ui()
         dummy_component = gr.Label(visible=False)
         with gr.Row():
             with gr.Column(scale=2, label="Input & Output", elem_id="txt2img_input_and_output"):
@@ -813,6 +821,7 @@ def create_ui():
     scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
+        scripts.scripts_img2img.prepare_ui()
         with gr.Row():
             with gr.Column(scale=2, label="Input & Output", elem_id="img2img_input_and_output", render=False) as img2img_io_column:
                 prompt_row = PromptColumn(is_img2img=True)
@@ -839,6 +848,7 @@ def create_ui():
                 dummy_component,
                 dummy_component,
                 img2img_column.inpainting_method,
+                img2img_column.outpainting_enabled,
                 prompt_row.prompt,
                 advanced_ui.negative_prompt,
                 dropdown,
