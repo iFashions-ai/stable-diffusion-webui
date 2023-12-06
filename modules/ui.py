@@ -307,7 +307,7 @@ class AdvancedColumn:
                         elif category == "accordions":
                             with gr.Row(elem_id=f"{self.id_part}_accordions", elem_classes="accordions"):
                                 if not is_img2img:
-                                    with InputAccordion(False, label="Hires. fix", elem_id=f"{self.id_part}_hr") as self.enable_hr:
+                                    with InputAccordion(False, label="Hires. fix", elem_id=f"{self.id_part}_hr", visible=False) as self.enable_hr:
                                         with self.enable_hr.extra():
                                             self.hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False, min_width=0)
 
@@ -1326,7 +1326,7 @@ def create_ui():
         if os.path.exists(os.path.join(script_path, "notification.mp3")) and shared.opts.notification_audio:
             gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
-        footer = shared.html("footer.html")
+        footer = shared.html("footer-ifahsion.html")
         footer = footer.format(versions=versions_html(), api_docs="/docs" if shared.cmd_opts.api else "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API")
         gr.HTML(footer, elem_id="footer")
 
@@ -1371,9 +1371,11 @@ def versions_html():
     else:
         xformers_version = "N/A"
 
+    """version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>
+&#x2000;•&#x2000;"""
+    """&#x2000;•&#x2000;
+checkpoint: <a id="sd_checkpoint_hash">N/A</a>"""
     return f"""
-version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>
-&#x2000;•&#x2000;
 python: <span title="{sys.version}">{python_version}</span>
 &#x2000;•&#x2000;
 torch: {getattr(torch, '__long_version__',torch.__version__)}
@@ -1381,8 +1383,6 @@ torch: {getattr(torch, '__long_version__',torch.__version__)}
 xformers: {xformers_version}
 &#x2000;•&#x2000;
 gradio: {gr.__version__}
-&#x2000;•&#x2000;
-checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 """
 
 
