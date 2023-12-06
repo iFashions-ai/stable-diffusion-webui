@@ -725,13 +725,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         # and if after running refiner, the refiner model is not unloaded - webui swaps back to main model here, if model over is present it will be reloaded afterwards
         if sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
             p.override_settings.pop('sd_model_checkpoint', None)
-            sd_models.reload_model_weights()
+            p.sd_model = sd_models.reload_model_weights().clone_with_patches(p.sd_model)
 
         for k, v in p.override_settings.items():
             opts.set(k, v, is_api=True, run_callbacks=False)
 
             if k == 'sd_model_checkpoint':
-                sd_models.reload_model_weights()
+                p.sd_model = sd_models.reload_model_weights().clone_with_patches(p.sd_model)
 
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()
@@ -829,7 +829,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if state.interrupted:
                 break
 
-            sd_models.reload_model_weights()  # model can be changed for example by refiner
+            p.sd_model = sd_models.reload_model_weights().clone_with_patches(p.sd_model)  # model can be changed for example by refiner
 
             p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
@@ -1166,7 +1166,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             decoded_samples = None
 
         with sd_models.SkipWritingToConfig():
-            sd_models.reload_model_weights(info=self.hr_checkpoint_info)
+            self.sd_model = sd_models.reload_model_weights(info=self.hr_checkpoint_info).clone_with_patches(self.sd_model)
 
         devices.torch_gc()
 

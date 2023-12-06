@@ -86,7 +86,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
         self.options = options or {}
         self.func = funcname if callable(funcname) else getattr(k_diffusion.sampling, self.funcname)
 
-        self.model_wrap_cfg = CFGDenoiserKDiffusion(self)
+        self.model_wrap_cfg = CFGDenoiserKDiffusion(self, sd_model=sd_model)
         self.model_wrap = self.model_wrap_cfg.inner_model
 
     def get_sigmas(self, p, steps):
