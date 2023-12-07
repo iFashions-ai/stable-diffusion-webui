@@ -1146,3 +1146,7 @@ body.resizing .resize-handle {
 .aspect_ratios label input {
     margin-left: -5px !important;
 }
+
+.aspect_ratios {
+    margin-bottom: 0.5em !important;
+}

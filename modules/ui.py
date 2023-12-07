@@ -14,7 +14,7 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_grad
 
 from modules import gradio_extensons  # noqa: F401
 from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles, scripts, sd_samplers, processing, ui_extra_networks
-from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML, InputAccordion, ResizeHandleRow
+from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML, InputAccordion, ResizeHandleRow
 from modules.paths import script_path
 from modules.ui_common import create_refresh_button
 from modules.ui_gradio_extensions import reload_javascript
@@ -283,7 +283,7 @@ class AdvancedColumn:
                                         self.batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id=f"{self.id_part}_batch_count")
                                         self.batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id=f"{self.id_part}_batch_size")
 
-                            with FormRow():
+                            if self.id_part == "img2img":
                                 self.resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Resize and fill")
 
                             def update_aspect_ratio(value):
