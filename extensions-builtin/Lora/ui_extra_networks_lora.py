@@ -66,7 +66,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         return item
 
     def list_items(self):
-        for index, name in enumerate(networks.available_networks):
+        for index, name in enumerate(list(networks.available_networks)):
             item = self.create_item(name, index)
 
             if item is not None:

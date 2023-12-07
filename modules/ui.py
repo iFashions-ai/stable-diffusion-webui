@@ -216,7 +216,7 @@ class PromptColumn:
             # Input Row
             with gr.Row():
                 with gr.Column(scale=17):
-                    self.prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=4, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+                    self.prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=4, placeholder="Type your prompt here", elem_classes=["prompt"])
 
                 with gr.Column(scale=3, elem_id=f"{id_part}_actions_column"):
                     with gr.Row():
@@ -252,7 +252,7 @@ class AdvancedColumn:
                         self.negative_prompt = gr.Textbox(
                             label="Negative Prompt",
                             show_label=True,
-                            placeholder="Type prompt here.",
+                            placeholder="Type what you don't want to see here",
                             info="Describing what you do not want to see.",
                             lines=2,
                             elem_id=f"{self.id_part}_neg_prompt",
@@ -262,7 +262,7 @@ class AdvancedColumn:
 
                     for category in ordered_ui_categories():
                         if category == "sampler":
-                            self.steps, self.sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "txt2img")
+                            self.steps, self.sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "txt2img", sampler_interactive=False)
 
                         elif category == "dimensions":
                             aspect_ratios = sdxl_aspect_ratios if opts.data.get("sdxl_filter_enabled", True) else sd15_aspect_ratios
@@ -501,7 +501,7 @@ class Img2ImgColumn:
 
             for category in ordered_uis:
                 if category == "denoising":
-                    self.denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
+                    self.denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Variation', info="The higher the variation, the greater the deviation from the original input.", value=0.75, elem_id="img2img_denoising_strength")
 
                 elif category == "cfg":
                     with gr.Row():
@@ -510,24 +510,26 @@ class Img2ImgColumn:
                 elif category == "inpaint":
                     # with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
                     with gr.Accordion(label="Inpaint options", elem_id="inpaint_controls", open=True, visible=False) as inpaint_controls:
-                        with FormRow():
-                            self.mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
+                        with FormRow(visible=False):
+                            self.mask_blur = gr.Slider(label='Mask blur', info="Blur the mask with Gaussion kernel", minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
                             self.mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
 
                         with FormRow():
-                            self.inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
+                            self.inpainting_mask_invert = gr.Radio(label='Mask mode', info="Change the area masked or not masked", choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
 
                         with FormRow():
-                            self.inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
+                            # choices = ['fill', 'original', 'latent noise', 'latent nothing']
+                            choices = ['fill', 'original']
+                            self.inpainting_fill = gr.Radio(label='Masked content', info="Erase the masked area or keep it during inference", choices=choices, value='original', type="index", elem_id="img2img_inpainting_fill")
 
                         with FormRow():
                             with gr.Column():
-                                self.inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
+                                self.inpaint_full_res = gr.Radio(label="Inpaint area", info="Inference the whole image or only the masked area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
 
                             with gr.Column(scale=4):
-                                self.inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
+                                self.inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', info="Padding when inference only the masked area", minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
 
-                        with FormRow():
+                        with FormRow(visible=False):
                             self.inpainting_method = gr.Radio(label='Inpainting method', choices=["SDWebui", "Fooocus"], value='Fooocus', elem_id="img2img_inpainting_method")
 
                 elif category == "scripts":
@@ -665,15 +667,15 @@ def create_output_panel(tabname, outdir):
     return ui_common.create_output_panel(tabname, outdir)
 
 
-def create_sampler_and_steps_selection(choices, tabname):
+def create_sampler_and_steps_selection(choices, tabname, sampler_interactive:bool = True):
     if opts.samplers_in_dropdown:
         with FormRow(elem_id=f"sampler_selection_{tabname}"):
-            sampler_name = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=choices, value=choices[0])
+            sampler_name = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=choices, value=choices[0], interactive=sampler_interactive)
             steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
     else:
         with FormGroup(elem_id=f"sampler_selection_{tabname}"):
             steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
-            sampler_name = gr.Radio(label='Sampling method', elem_id=f"{tabname}_sampling", choices=choices, value=choices[0])
+            sampler_name = gr.Radio(label='Sampling method', elem_id=f"{tabname}_sampling", choices=choices, value=choices[0], interactive=sampler_interactive)
 
     return steps, sampler_name
 
@@ -1097,7 +1099,7 @@ def create_ui():
                         clip_grad_value = gr.Textbox(placeholder="Gradient clip value", value="0.1", show_label=False)
 
                     with FormRow():
-                        batch_size = gr.Number(label='Batch size', value=1, precision=0, elem_id="train_batch_size")
+                        batch_size = gr.Number(visible=False, label='Batch size', value=1, precision=0, elem_id="train_batch_size")
                         gradient_step = gr.Number(label='Gradient accumulation steps', value=1, precision=0, elem_id="train_gradient_step")
 
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images", elem_id="train_dataset_directory")
