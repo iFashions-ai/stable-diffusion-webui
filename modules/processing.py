@@ -1437,6 +1437,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         crop_region = None
 
         image_mask = self.image_mask
+        # if image_mask is not None:
+        #     image_mask.save("mask.png")
         # Load inpainting model
         inpaint_lora_path, inpaint_head_path = None, None
         if image_mask is not None and self.is_fooocus_inpainting:
