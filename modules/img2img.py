@@ -133,21 +133,29 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
 def img2img(id_task: str, mode: int, inpainting_method: str, enable_outpainting, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_name: str, mask_blur: int, mask_alpha: float, inpainting_fill: int, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
     override_settings = create_override_settings_dict(override_settings_texts)
 
-    is_batch = mode == 5
-    is_inpaint = mode in [2, 4]
+    MODE_MAP = {
+        "img2img": 0,
+        "img2img_sketch": 1,
+        "inpaint": 2,
+        "inpaint_sketch": -1,
+        "inpaint_upload": 3,
+        "batch": 4
+    }
+    is_batch = mode == MODE_MAP["batch"]
+    is_inpaint = mode in [MODE_MAP["inpaint"], MODE_MAP["inpaint_sketch"], MODE_MAP["inpaint_upload"]]
     if enable_outpainting and is_inpaint:
         args = ("Outpainting mk2",) + args[1:]
 
-    if mode == 0:  # img2img
+    if mode == MODE_MAP["img2img"]:  # img2img
         image = init_img
         mask = None
-    elif mode == 1:  # img2img sketch
+    elif mode == MODE_MAP["img2img_sketch"]:  # img2img sketch
         image = sketch
         mask = None
-    elif mode == 2:  # inpaint
+    elif mode == MODE_MAP["inpaint"]:  # inpaint
         image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
         mask = processing.create_binary_mask(mask)
-    elif mode == 3:  # inpaint sketch
+    elif mode == MODE_MAP["inpaint_sketch"]:  # inpaint sketch
         image = inpaint_color_sketch
         orig = inpaint_color_sketch_orig or inpaint_color_sketch
         pred = np.any(np.array(image) != np.array(orig), axis=-1)
@@ -155,7 +163,7 @@ def img2img(id_task: str, mode: int, inpainting_method: str, enable_outpainting,
         mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
         blur = ImageFilter.GaussianBlur(mask_blur)
         image = Image.composite(image.filter(blur), orig, mask.filter(blur))
-    elif mode == 4:  # inpaint upload mask
+    elif mode == MODE_MAP["inpaint_upload"]:  # inpaint upload mask
         image = init_img_inpaint
         mask = init_mask_inpaint
     else:
