@@ -297,7 +297,7 @@ class AdvancedColumn:
 
                         elif category == "cfg":
                             with gr.Row():
-                                self.cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id=f"{self.id_part}_cfg_scale")
+                                self.cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', info="The weight of the text prompt, the higher the value the stronger the effect", value=4.5, elem_id=f"{self.id_part}_cfg_scale")
 
                         elif category == "checkboxes":
                             with FormRow(elem_classes="checkboxes-row", variant="compact"):
