@@ -280,8 +280,8 @@ class AdvancedColumn:
                                         self.detect_image_size_btn = ToolButton(value=detect_image_size_symbol, elem_id=f"{self.id_part}_detect_image_size_btn", tooltip="Auto detect size from img2img")
                                 if opts.dimensions_and_batch_together:
                                     with gr.Column(elem_id=f"{self.id_part}_column_batch"):
-                                        self.batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id=f"{self.id_part}_batch_count")
-                                        self.batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id=f"{self.id_part}_batch_size")
+                                        self.batch_count = gr.Slider(minimum=1, maximum=32, step=1, label='Batch count', value=1, elem_id=f"{self.id_part}_batch_count")
+                                        self.batch_size = gr.Slider(visible=False, minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id=f"{self.id_part}_batch_size")
 
                             if self.id_part == "img2img":
                                 self.resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Resize and fill")
@@ -340,8 +340,8 @@ class AdvancedColumn:
                         elif category == "batch":
                             if not opts.dimensions_and_batch_together:
                                 with FormRow(elem_id=f"{self.id_part}_column_batch"):
-                                    self.batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id=f"{self.id_part}_batch_count")
-                                    self.batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id=f"{self.id_part}_batch_size")
+                                    self.batch_count = gr.Slider(minimum=1, maximum=32, step=1, label='Batch count', value=1, elem_id=f"{self.id_part}_batch_count")
+                                    self.batch_size = gr.Slider(visible=False, minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id=f"{self.id_part}_batch_size")
 
                         elif category == "override_settings":
                             with FormRow(elem_id=f"{self.id_part}_override_settings_row") as row:
@@ -385,6 +385,9 @@ class AdvancedColumn:
             extra_model_unrelated_tabs.append(extentions_tab)
 
             for tab_name, tab_key in extra_tabs.items():
+                # Disable ImagePrompt for img2img
+                if tab_name == "ImagePrompt" and is_img2img:
+                    continue
                 extra_script = scripts_runner.title_map.get(tab_key.lower())
                 if extra_script is not None:
                     with gr.Tab(tab_name) as extra_tab:
@@ -520,7 +523,7 @@ class Img2ImgColumn:
                         with FormRow():
                             # choices = ['fill', 'original', 'latent noise', 'latent nothing']
                             choices = ['fill', 'original']
-                            self.inpainting_fill = gr.Radio(label='Masked content', info="Erase the masked area or keep it during inference", choices=choices, value='original', type="index", elem_id="img2img_inpainting_fill")
+                            self.inpainting_fill = gr.Radio(label='Masked content', info="Erase the masked area (fill) or keep it during inference (original)", choices=choices, value='original', type="index", elem_id="img2img_inpainting_fill")
 
                         with FormRow():
                             with gr.Column():
