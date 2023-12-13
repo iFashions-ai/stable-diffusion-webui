@@ -385,9 +385,9 @@ class AdvancedColumn:
             extra_model_unrelated_tabs.append(extentions_tab)
 
             for tab_name, tab_key in extra_tabs.items():
-                # Disable ImagePrompt for img2img
-                if tab_name == "ImagePrompt" and is_img2img:
-                    continue
+                # # Disable ImagePrompt for img2img
+                # if tab_name == "ImagePrompt" and is_img2img:
+                #     continue
                 extra_script = scripts_runner.title_map.get(tab_key.lower())
                 if extra_script is not None:
                     with gr.Tab(tab_name) as extra_tab:

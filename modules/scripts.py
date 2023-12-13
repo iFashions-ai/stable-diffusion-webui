@@ -625,7 +625,7 @@ class ScriptRunner:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
-            except errors.ImageNotFoundError as e:
+            except (errors.ImageNotFoundError, errors.ImagePromptNotSupported) as e:
                 errors.report(f"Error running process: {script.filename}", exc_info=True)
                 raise e
             except Exception:
