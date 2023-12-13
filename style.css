@@ -1150,3 +1150,10 @@ body.resizing .resize-handle {
 .aspect_ratios {
     margin-bottom: 0.5em !important;
 }
+
+.error {
+    font-size: medium;
+    margin-bottom: 1em;
+    background: #ff9b995e;
+    color: #2c3e50;
+}

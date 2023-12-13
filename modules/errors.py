@@ -6,6 +6,10 @@ import traceback
 exception_records = []
 
 
+class ImageNotFoundError(Exception):
+        pass
+
+
 def record_exception():
     _, e, tb = sys.exc_info()
     if e is None:
