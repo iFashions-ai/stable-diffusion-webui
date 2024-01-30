@@ -242,7 +242,7 @@ class StableDiffusionModelHijack:
 
         self.layers = flatten(m)
 
-        if isinstance(m, ldm.models.diffusion.ddpm.LatentDiffusion):
+        if isinstance(m, (ldm.models.diffusion.ddpm.LatentDiffusion, ldm.models.diffusion.ddpm.LatentDiffusionV1)):
             sd_unet.original_forward = ldm_original_forward
         elif isinstance(m, sgm.models.diffusion.DiffusionEngine):
             sd_unet.original_forward = sgm_original_forward

@@ -1417,7 +1417,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.initial_noise_multiplier = opts.initial_noise_multiplier if self.initial_noise_multiplier is None else self.initial_noise_multiplier
 
         # Prepare inpainting models
-        self.is_fooocus_inpainting = self.inpainting_method != 'SDWebui'
+        self.is_fooocus_inpainting = self.inpainting_method != 'Original'
 
     @property
     def mask_blur(self):
@@ -1468,7 +1468,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 crop_region = masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
                 crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                 x1, y1, x2, y2 = crop_region
-
+                if x2 < x1 or y2 < y1:
+                    raise ValueError("Invalid crop region, make sure the mask is not empty")
                 mask = mask.crop(crop_region)
                 image_mask = images.resize_image(2, mask, self.width, self.height)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)

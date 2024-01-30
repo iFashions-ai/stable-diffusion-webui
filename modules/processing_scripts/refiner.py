@@ -22,7 +22,7 @@ class ScriptRefiner(scripts.ScriptBuiltinUI):
         def get_choices():
             return [name for name in sd_models.checkpoint_tiles() if "refiner" in name]
 
-        with InputAccordion(False, label="Refiner", elem_id=self.elem_id("enable"), visible=False) as enable_refiner:
+        with InputAccordion(False, label="Refiner", elem_id=self.elem_id("enable"), visible=True) as enable_refiner:
             with gr.Row():
                 choices = get_choices()
                 refiner_checkpoint = gr.Dropdown(label='Checkpoint', elem_id=self.elem_id("checkpoint"), choices=choices, value=choices[0] if choices else "", tooltip="switch to another model in the middle of generation")

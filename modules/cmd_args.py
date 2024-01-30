@@ -1,7 +1,13 @@
 import argparse
 import json
 import os
+from typing import List, Optional
 from modules.paths_internal import models_path, script_path, data_path, extensions_dir, extensions_builtin_dir, sd_default_config, sd_model_file  # noqa: F401
+
+
+def get_argv() -> Optional[List[str]]:
+    return json.loads(os.environ.get("SD_WEBUI_ARGV", "null"))
+
 
 parser = argparse.ArgumentParser()
 

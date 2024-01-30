@@ -262,7 +262,7 @@ class AdvancedColumn:
 
                     for category in ordered_ui_categories():
                         if category == "sampler":
-                            self.steps, self.sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "txt2img", sampler_interactive=False)
+                            self.steps, self.sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), tabname=id_part, sampler_interactive=True)
 
                         elif category == "dimensions":
                             aspect_ratios = sdxl_aspect_ratios if opts.data.get("sdxl_filter_enabled", True) else sd15_aspect_ratios
@@ -306,7 +306,7 @@ class AdvancedColumn:
                         elif category == "accordions":
                             with gr.Row(elem_id=f"{self.id_part}_accordions", elem_classes="accordions"):
                                 if not is_img2img:
-                                    with InputAccordion(False, label="Hires. fix", elem_id=f"{self.id_part}_hr", visible=False) as self.enable_hr:
+                                    with InputAccordion(False, label="Hires. fix", elem_id=f"{self.id_part}_hr", visible=True) as self.enable_hr:
                                         with self.enable_hr.extra():
                                             self.hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False, min_width=0)
 
@@ -333,8 +333,6 @@ class AdvancedColumn:
                                             with gr.Column(scale=80):
                                                 with gr.Row():
                                                     self.hr_negative_prompt = gr.Textbox(label="Hires negative prompt", elem_id="hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt for hires fix pass.\nLeave empty to use the same negative prompt as in first pass.", elem_classes=["prompt"])
-
-                                script_runner = getattr(scripts, f"scripts_{self.id_part}")
                                 script_runner.setup_ui_for_section(category)
 
                         elif category == "batch":
@@ -395,12 +393,12 @@ class AdvancedColumn:
                         extra_model_unrelated_tabs.append(extra_tab)
 
 
-            with gr.Tabs(visible=False):
-                extentions_tab.render()
+            # with gr.Tabs(visible=False):
+            extentions_tab.render()
 
-                with gr.Tab("Extra Models") as extra_model_tab:
-                    extra_networks_ui = ui_extra_networks.create_ui(interface, extra_model_unrelated_tabs, self.id_part, related_tabs=[extra_model_tab])
-                    ui_extra_networks.setup_ui(extra_networks_ui, gallery)
+            with gr.Tab("Extra Models") as extra_model_tab:
+                extra_networks_ui = ui_extra_networks.create_ui(interface, extra_model_unrelated_tabs, self.id_part, related_tabs=[extra_model_tab])
+                ui_extra_networks.setup_ui(extra_networks_ui, gallery)
 
 
 class Img2ImgColumn:
@@ -532,8 +530,8 @@ class Img2ImgColumn:
                             with gr.Column(scale=4):
                                 self.inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', info="Padding when inference only the masked area", minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
 
-                        with FormRow(visible=False):
-                            self.inpainting_method = gr.Radio(label='Inpainting method', choices=["SDWebui", "Fooocus"], value='Fooocus', elem_id="img2img_inpainting_method")
+                        with FormRow(visible=True):
+                            self.inpainting_method = gr.Radio(label='Inpainting method', choices=["Original", "Finetuned"], value='Finetuned', elem_id="img2img_inpainting_method")
 
                 elif category == "scripts":
                     with gr.Column():

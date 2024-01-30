@@ -15,7 +15,7 @@ from modules.paths_internal import script_path, extensions_dir
 from modules.timer import startup_timer
 from modules import logging_config
 
-args, _ = cmd_args.parser.parse_known_args()
+args, _ = cmd_args.parser.parse_known_args(cmd_args.get_argv())
 logging_config.setup_logging(args.loglevel)
 
 python = sys.executable
