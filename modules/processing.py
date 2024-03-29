@@ -725,7 +725,12 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         # and if after running refiner, the refiner model is not unloaded - webui swaps back to main model here, if model over is present it will be reloaded afterwards
         if sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
             p.override_settings.pop('sd_model_checkpoint', None)
-            p.sd_model = sd_models.reload_model_weights().clone_with_patches(p.sd_model)
+            sd_model  = sd_models.reload_model_weights()
+            if hasattr(sd_model, "clone_with_patches"):
+                p.sd_model = sd_model.clone_with_patches(p.sd_model)
+            else:
+                print("Warning: Model does not support clone_with_patches, using the original model")
+                p.sd_model = sd_model
 
         for k, v in p.override_settings.items():
             opts.set(k, v, is_api=True, run_callbacks=False)
